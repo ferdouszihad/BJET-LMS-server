@@ -19,7 +19,8 @@ userRoute.post("/login", async (req, res) => {
       name,
       email,
       role,
-      courses: [],
+      enrolled_courses: [],
+      teaching_courses: [],
     };
     const result = await userCollection.insertOne(newUser);
     res.status(201).json({
@@ -60,11 +61,9 @@ userRoute.get("/role/:email", useAuthentication, async (req, res) => {
 
   const query = { email: email };
   const user = await userCollection.findOne(query);
-  let role = null;
-  if (user) {
-    admin = user?.role;
-  }
-  res.send({ role });
+  console.log(user);
+
+  res.send({ role: user ? user.role : "" });
 });
 
 module.exports = userRoute;

@@ -3,6 +3,7 @@ const app = express();
 const cors = require("cors");
 const userRoutes = require("./routes/user.routes");
 const jwtRoutes = require("./routes/jwt.routes");
+const courseRouter = require("./routes/course.routes");
 
 // Middleware
 app.use(express.json({ limit: "50mb" }));
@@ -13,6 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/jwt", jwtRoutes);
+app.use("/api/v1/courses", courseRouter);
 
 app.get("/", (req, res) => {
   res.status(200).json({
