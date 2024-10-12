@@ -2,6 +2,7 @@ const express = require("express");
 const userRoute = express.Router();
 const { db } = require("../utils/connectDB");
 const useAuthentication = require("../middlewares/useAuthentication");
+const courseCollection = db.collection("courses");
 const userCollection = db.collection("users");
 
 userRoute.post("/login", async (req, res) => {
@@ -40,9 +41,7 @@ userRoute.get("/single/:email", async (req, res) => {
   try {
     const { email } = req.params;
     const user = await userCollection.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
+
     res.status(200).json(user);
   } catch (err) {
     res.status(500).json({
@@ -64,6 +63,31 @@ userRoute.get("/role/:email", useAuthentication, async (req, res) => {
   console.log(user);
 
   res.send({ role: user ? user.role : "" });
+});
+
+userRoute.get("/course/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    //get course data from id
+    const course = courseCollection.findOne({ _id: new ObjectId(id) });
+    if (!course) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Course not found" });
+    }
+
+    let { students } = course;
+    students = students?.map((student) => new ObjectId(student));
+
+    const user = await userCollection.findOne({ _id: { $in: students } });
+
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({
+      status: false,
+      message: err.message || "An error occurred while creating user",
+    });
+  }
 });
 
 module.exports = userRoute;
