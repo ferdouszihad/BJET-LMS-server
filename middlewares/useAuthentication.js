@@ -1,8 +1,11 @@
 const jwt = require("jsonwebtoken");
 const useAuthentication = (req, res, next) => {
   // console.log('inside verify token', req.headers.authorization);
+
   if (!req.headers.authorization) {
-    return res.status(401).send({ message: "unauthorized access" });
+    return res
+      .status(401)
+      .send({ message: "unauthorized access.NO Token Found" });
   }
   const token = req.headers.authorization.split(" ")[1];
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {

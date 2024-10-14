@@ -5,6 +5,22 @@ const useAuthentication = require("../middlewares/useAuthentication");
 const courseRouter = express.Router();
 const userCollection = db.collection("users");
 const courseCollection = db.collection("courses");
+const moduleCollection = db.collection("modules");
+
+courseRouter.post("/create", useAuthentication, async (req, res) => {
+  const courseData = { ...req.body, status: "publish" };
+  const result = await courseCollection.insertOne({
+    ...courseData,
+    modules: [],
+  });
+  await userCollection.updateOne(
+    { email: req.body?.teacher[0] },
+    { $push: { teaching_courses: result.insertedId } }
+  );
+
+  res.send(result);
+});
+
 courseRouter.get("/single/:id", useAuthentication, async (req, res) => {
   try {
     const { id } = req.params;
@@ -41,7 +57,7 @@ courseRouter.get("/teaching/:email", useAuthentication, async (req, res) => {
 
     const result =
       (await courseCollection
-        .find({ _id: { $in: teaching_courses } })
+        .find({ _id: { $in: teaching_courses }, status: "publish" })
         .toArray()) || [];
     res.json(result);
   } catch (err) {
@@ -50,20 +66,6 @@ courseRouter.get("/teaching/:email", useAuthentication, async (req, res) => {
       message: "Internal Server Error",
     });
   }
-});
-
-courseRouter.post("/create", useAuthentication, async (req, res) => {
-  const courseData = { ...req.body, status: "publish" };
-  const result = await courseCollection.insertOne({
-    ...courseData,
-    modules: [],
-  });
-  await userCollection.updateOne(
-    { email: req.body?.teacher[0] },
-    { $push: { teaching_courses: result.insertedId } }
-  );
-
-  res.send(result);
 });
 
 courseRouter.put("/update-thumbnail/:id", async (req, res) => {
@@ -97,6 +99,54 @@ courseRouter.put("/update/:id", async (req, res) => {
       status: false,
       message: "Internal Server Error",
     });
+  }
+});
+
+courseRouter.post("/modules/create", async (req, res) => {
+  try {
+    const newModuleData = {
+      ...req.body,
+      created_at: new Timestamp(),
+    };
+
+    const result = await moduleCollection.insertOne(newModuleData);
+    res.send(result);
+
+    console.log(req.body);
+  } catch (e) {
+    res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+    });
+    console.log(e);
+  }
+});
+
+courseRouter.get("/modules/:course_id", async (req, res) => {
+  try {
+    const { course_id } = req.params;
+    const courseModules = await moduleCollection.find({ course_id }).toArray();
+    res.send(courseModules);
+  } catch (e) {
+    res.status(500).json({
+      status: false,
+      message: "Internal Server Error",
+    });
+    console.log(e);
+  }
+});
+
+courseRouter.get("/module/single/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const module = await moduleCollection.findOne({ _id: new ObjectId(id) });
+    res.send(module);
+  } catch (e) {
+    res.status(500).json({
+      status: false,
+      message: e.message || "Internal Server Error",
+    });
+    console.log(e);
   }
 });
 module.exports = courseRouter;
